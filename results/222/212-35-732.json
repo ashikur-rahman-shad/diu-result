@@ -1,0 +1,40 @@
+[
+    {
+        "semesterId": "222",
+        "semesterName": "Summer",
+        "semesterYear": 2022,
+        "studentId": "212-35-732",
+        "courseId": "T587",
+        "customCourseId": "SE 211",
+        "courseTitle": "Object Oriented Concepts",
+        "totalCredit": 3.0,
+        "grandTotal": null,
+        "pointEquivalent": 4.0,
+        "gradeLetter": "A+",
+        "cgpa": 4.0,
+        "blocked": "N",
+        "blockCause": null,
+        "tevalSubmitted": "SUBMITTED",
+        "teval": "Y",
+        "semesterAccountsClearance": null
+    },
+    {
+        "semesterId": "222",
+        "semesterName": "Summer",
+        "semesterYear": 2022,
+        "studentId": "212-35-732",
+        "courseId": "T591",
+        "customCourseId": "SE 213",
+        "courseTitle": "Digital Electronics & Logic Design",
+        "totalCredit": 3.0,
+        "grandTotal": null,
+        "pointEquivalent": 4.0,
+        "gradeLetter": "A+",
+        "cgpa": 4.0,
+        "blocked": "N",
+        "blockCause": null,
+        "tevalSubmitted": "SUBMITTED",
+        "teval": "Y",
+        "semesterAccountsClearance": null
+    }
+]

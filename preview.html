@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$studentName's $progShortName Result</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        table tfoot{display:table-row-group;}
+
+        #result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        #result-table th,
+        #result-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #result-table th {
+            background-color: #f2f2f2;
+        }
+
+        #cgpa-display {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        #student-info {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+        }
+
+        #summary-row td {
+            font-weight: bold;
+            background-color: #e0f7fa;
+            /* Light cyan background for emphasis */
+        }
+
+        .semester-group-even {
+            background-color: #f9f9f9;
+            /* Light grey */
+        }
+
+        .semester-group-odd {
+            background-color: #ffffff;
+            /* White */
+        }
+
+        .button-container {
+            margin: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .button-container button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .button-container button:hover {
+            background-color: #367c39;
+        }
+
+        @media print {
+            .button-container {
+                display: none;
+            }
+
+            /* Hide header and footer for print */
+            @page {
+                margin-header: 0;
+                margin-footer: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="button-container">
+        <button onclick="window.location.href = './';">Back</button>
+        <button onclick="window.print();">Download/Print</button>
+    </div>
+    <main>
+        <div id="student-info">
+            <h1>Result of $Studentname</h1>
+            <h2>$programName, Daffodil International University</h2>
+            <h3>Department of departmentName ($deptShortName), $facultyName ($facShortName)</h3>
+            <h4>ID: $studentID</h4>
+            <b>Admission info: </b> $Semester, Batch $batchNo, Admitted to campus: $campusName
+        </div>
+
+        <div id="cgpa-display"></div>
+        <table id="result-table">
+            <thead>
+                <tr>
+                    <th>Semester</th>
+                    <th>Semester CGPA</th>
+                    <th>Course ID</th>
+                    <th>Course Title</th>
+                    <th>Credits</th>
+                    <th>Points</th>
+                    <th>Weighted Points</th>
+                    <th>Grade Letter</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+            <tfoot>
+                <tr id="summary-row">
+                    <td id="total-semester"></td>
+                    <td id="final-cgpa" colspan=""></td>
+                    <td>B.Sc in SWE</td>
+                    <td>Bachelors in Software Engineering</td>
+                    <td id="total-credits"></td>
+                    <td colspan="2" id="total-weighted-points"></td>
+                    <td id="final-grade"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </main>
+    <div class="button-container">
+        <button onclick="window.location.href = './';">Back</button>
+        <button onclick="window.print();">Download/Print</button>
+    </div>
+
+    <script>
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        async function loadAndProcessData() {
+            const studentId = getQueryParam('student_id');
+            if (!studentId) {
+                document.getElementById('cgpa-display').innerText = 'Error: student_id parameter is missing in the URL.';
+                return;
+            }
+
+            const filePath = `./combined_results/combined_${studentId}.json`;
+            const studentInfoJsonFilePath = './students-info/students-info.json'; // Path to the student info JSON
+
+
+            try {
+                const response = await fetch(filePath);
+                const studentInfoResponse = await fetch(studentInfoJsonFilePath); // Fetch student info
+
+                if (!response.ok) {
+                    document.getElementById('cgpa-display').innerText = `Error: Could not load data for student ID ${studentId}. File not found or error loading.`;
+                    console.error('Error loading JSON:', response.status);
+                    return;
+                }
+
+                if (!studentInfoResponse.ok) {
+                    throw new Error(`Could not load student info data. Status: ${studentInfoResponse.status}`);
+                }
+
+
+                const jsonData = await response.json();
+                const studentInfoData = await studentInfoResponse.json(); // Parse student info JSON
+
+
+                // Find the student's information
+                const studentInfo = studentInfoData.find(student => student.studentId === studentId);
+
+
+                processData(jsonData, studentInfo); // Pass studentInfo to processData
+            } catch (error) {
+                document.getElementById('cgpa-display').innerText = `Error: Could not load or parse data for student ID ${studentId}.`;
+                console.error('Error loading or parsing JSON:', error);
+            }
+        }
+
+        function processData(data, studentInfo) { // Receive studentInfo
+            const courseRecords = {};
+            const allCourseData = [];
+
+            data.forEach(item => {
+                const courseId = item.customCourseId;
+                const points = parseFloat(item.pointEquivalent);
+                if (courseId && !isNaN(points)) {
+                    if (!courseRecords[courseId] || points > courseRecords[courseId].pointEquivalent) {
+                        courseRecords[courseId] = {
+                            ...item,
+                            pointEquivalent: points
+                        };
+                    }
+                }
+            });
+
+            for (const courseId in courseRecords) {
+                allCourseData.push(courseRecords[courseId]);
+            }
+
+            let totalWeightedPoints = 0;
+            let totalCredits = 0;
+
+            allCourseData.forEach(course => {
+                const credits = parseFloat(course.totalCredit);
+                const points = parseFloat(course.pointEquivalent);
+                if (!isNaN(credits) && !isNaN(points)) {
+                    totalWeightedPoints += credits * points;
+                    totalCredits += credits;
+                }
+            });
+
+            const cgpa = totalCredits > 0 ? (totalWeightedPoints / totalCredits).toFixed(3) : '0.000';
+            document.getElementById('cgpa-display').innerText = `Your CGPA: ${cgpa}`;
+
+            displayTable(allCourseData, totalCredits, totalWeightedPoints, cgpa, studentInfo); // Pass studentInfo
+        }
+
+        function getGrade(cgpa) {
+            const cgpaValue = parseFloat(cgpa);
+            if (cgpaValue >= 4.0) return 'A+';
+            if (cgpaValue >= 3.75) return 'A';
+            if (cgpaValue >= 3.5) return 'A-';
+            if (cgpaValue >= 3.25) return 'B+';
+            if (cgpaValue >= 3.0) return 'B';
+            if (cgpaValue >= 2.75) return 'B-';
+            if (cgpaValue >= 2.5) return 'C+';
+            if (cgpaValue >= 2.25) return 'C';
+            if (cgpaValue >= 2.0) return 'D';
+            return 'F';
+        }
+
+        function trimToTwoDecimal(num) {
+            const str = String(num);
+            const decimalIndex = str.indexOf('.');
+            if (decimalIndex === -1) {
+                return str;
+            }
+            return str.slice(0, decimalIndex + 3);
+        }
+
+        function displayTable(courses, totalCredits, totalWeightedPoints, finalCgpa, studentInfo) { // Receive studentInfo
+            const tableBody = document.getElementById('result-table').getElementsByTagName('tbody')[0];
+            const totalSemesterCell = document.getElementById('total-semester');
+            const totalCreditsCell = document.getElementById('total-credits');
+            const finalCgpaCell = document.getElementById('final-cgpa');
+            const totalWeightedPointsCell = document.getElementById('total-weighted-points');
+            const finalGradeCell = document.getElementById('final-grade');
+            const studentInfoDiv = document.getElementById('student-info'); // Get the student info div
+
+            document.title = studentInfo ? `${studentInfo.studentName}'s ${studentInfo.progShortName} Result` : "$studentName's $progShortName Result";
+
+
+            tableBody.innerHTML = ''; // Clear previous data
+
+            // Display Student Info at the top
+            if (studentInfo) {
+                studentInfoDiv.innerHTML = `<h1>Result of ${studentInfo.studentName}</h1>
+                                     <h2>${studentInfo.programName}, Daffodil International University</h2>
+                                     <h3>Department of ${studentInfo.departmentName} (${studentInfo.deptShortName}), ${studentInfo.facultyName} (${studentInfo.facShortName})</h3>
+                                     <h4>ID: ${studentInfo.studentId}</h4>
+                                     <b>Admission info: </b> ${studentInfo.semesterName}, Batch ${studentInfo.batchNo}, Admitted to campus: ${studentInfo.campusName}`;
+            } else {
+                studentInfoDiv.innerHTML = '<p>Student information not available.</p>';
+            }
+
+
+            // Sort courses primarily by semesterId and then by their original order
+            courses.sort((a, b) => {
+                if (a.semesterId < b.semesterId) {
+                    return -1;
+                }
+                if (a.semesterId > b.semesterId) {
+                    return 1;
+                }
+                return 0; // Maintain original order within the same semester
+            });
+
+            let currentSemester = null;
+            let semesterRowCount = 0;
+            let semesterStartIndex = 0;
+            let firstSemester = null;
+            let lastSemester = null;
+            let groupCounter = 0;
+
+            courses.forEach((course, index) => {
+                const semester = course.semesterName + " " + course.semesterYear;
+                if (!firstSemester) {
+                    firstSemester = semester;
+                }
+                lastSemester = semester;
+
+                const row = tableBody.insertRow();
+                const semesterCell = row.insertCell(0);
+                const semesterCgpaCell = row.insertCell(1);
+                const courseIdCell = row.insertCell(2);
+                const courseTitleCell = row.insertCell(3);
+                const creditsCell = row.insertCell(4);
+                const pointsCell = row.insertCell(5);
+                const weightedPointsCell = row.insertCell(6);
+                const gradeLetterCell = row.insertCell(7);
+
+                semesterCell.innerText = semester;
+                semesterCgpaCell.innerText = trimToTwoDecimal(course.cgpa); // Trim to two decimal places
+                courseIdCell.innerText = course.customCourseId;
+                courseTitleCell.innerText = course.courseTitle;
+                creditsCell.innerText = course.totalCredit;
+                pointsCell.innerText = course.pointEquivalent;
+                weightedPointsCell.innerText = (parseFloat(course.totalCredit) * parseFloat(course.pointEquivalent)).toFixed(2);
+                gradeLetterCell.innerText = course.gradeLetter;
+
+                if (semester === currentSemester) {
+                    semesterRowCount++;
+                    semesterCell.style.display = 'none';
+                    semesterCgpaCell.style.display = 'none';
+                } else {
+                    if (semesterRowCount > 1) {
+                        tableBody.rows[semesterStartIndex].cells[0].rowSpan = semesterRowCount;
+                        tableBody.rows[semesterStartIndex].cells[1].rowSpan = semesterRowCount;
+                    }
+                    const className = groupCounter % 2 === 0 ? 'semester-group-even' : 'semester-group-odd';
+                    for (let i = semesterStartIndex; i < index; i++) {
+                        tableBody.rows[i].classList.add(className);
+                    }
+
+                    currentSemester = semester;
+                    semesterRowCount = 1;
+                    semesterStartIndex = index;
+                    groupCounter++;
+                }
+
+                if (index === courses.length - 1) {
+                    const className = groupCounter % 2 === 0 ? 'semester-group-even' : 'semester-group-odd';
+                    for (let i = semesterStartIndex; i <= index; i++) {
+                        tableBody.rows[i].classList.add(className);
+                    }
+                    if (semesterRowCount > 1) {
+                        tableBody.rows[semesterStartIndex].cells[0].rowSpan = semesterRowCount;
+                        tableBody.rows[semesterStartIndex].cells[1].rowSpan = semesterRowCount;
+                    }
+                }
+            });
+
+            totalSemesterCell.innerText = firstSemester === lastSemester ? firstSemester : `${firstSemester} - ${lastSemester}`;
+            totalCreditsCell.innerText = totalCredits;
+            finalCgpaCell.innerText = finalCgpa;
+            totalWeightedPointsCell.innerText = totalWeightedPoints.toFixed(2);
+            finalGradeCell.innerText = getGrade(finalCgpa);
+        }
+
+        // Load and process data when the script runs
+        loadAndProcessData();
+    </script>
+</body>
+
+</html>

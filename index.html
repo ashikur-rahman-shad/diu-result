@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student CGPA and Information List</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+        #student-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #student-table th, #student-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #student-table th {
+            background-color: #f2f2f2;
+        }
+        #student-table tbody tr {
+            cursor: pointer; /* Change cursor on hover */
+        }
+        #student-table tbody tr:hover {
+            background-color: #effbff; /* Highlight row on hover */
+            color: #2374ff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Student CGPA and Information</h1>
+    <table id="student-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Student Name</th>
+                <th>Student ID</th>
+                <th>CGPA</th>
+                <th>Grade</th>
+                <th>Admission Info</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+        const studentTable = document.getElementById('student-table');
+        const tableBody = studentTable.getElementsByTagName('tbody')[0];
+        const cgpaJsonFilePath = './students-info/student_cgpas.json';
+        const studentInfoJsonFilePath = './students-info/students-info.json';
+
+        // Function to fetch JSON data
+        async function fetchData(url) {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        }
+
+        // Function to get grade based on CGPA
+        function getGrade(cgpa) {
+            if (cgpa >= 4.0) return 'A+';
+            if (cgpa >= 3.75) return 'A';  // Changed from 3.72 to 3.75
+            if (cgpa >= 3.5) return 'A-';
+            if (cgpa >= 3.25) return 'B+';
+            if (cgpa >= 3.0) return 'B';
+            if (cgpa >= 2.75) return 'B-';
+            if (cgpa >= 2.5) return 'C+';
+            if (cgpa >= 2.25) return 'C';
+            if (cgpa >= 2.0) return 'D';
+            return 'F';
+        }
+
+        // Function to combine and display data
+        async function combineAndDisplayData() {
+            try {
+                const cgpaData = await fetchData(cgpaJsonFilePath);
+                const studentInfoData = await fetchData(studentInfoJsonFilePath);
+
+                // Create a map for efficient student info lookup
+                const studentInfoMap = new Map();
+                studentInfoData.forEach(student => {
+                    studentInfoMap.set(student.studentId, student);
+                });
+
+                // Combine data and sort by CGPA
+                const combinedData = cgpaData.map(student => {
+                    const info = studentInfoMap.get(student.student_id);
+                    return {
+                        ...student,
+                        ...info,
+                        admissionInfo: info
+                            ? `Batch ${info.batchNo}, ${info.semesterName}, ${info.campusName}`
+                            : 'Information not available',
+                        grade: getGrade(student.cgpa) // Calculate grade here
+                    };
+                }).sort((a, b) => b.cgpa - a.cgpa);
+
+                // Populate the table
+                combinedData.forEach((student, index) => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = index + 1;
+                    row.insertCell().textContent = student.studentName || 'N/A';
+                    row.insertCell().textContent = student.studentId;
+                    row.insertCell().textContent = student.cgpa;
+                    row.insertCell().textContent = student.grade; // Add grade cell
+                    row.insertCell().textContent = student.admissionInfo || 'N/A';
+                    row.onclick = () => { // Make the entire row clickable
+                        window.location.href = `./preview.html?student_id=${student.student_id}`;
+                    };
+
+                });
+            } catch (error) {
+                console.error('Error fetching or processing data:', error);
+                studentTable.innerHTML = `<tr><td colspan="6" style="color: red;">Error: Could not load or process student data. Check console for details.</td></tr>`; // Adjusted colspan
+            }
+        }
+
+        // Call the function to start the process
+        combineAndDisplayData();
+    </script>
+</body>
+</html>
