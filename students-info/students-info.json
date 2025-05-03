@@ -20,6 +20,26 @@
         "shift": "MORNING"
     },
     {
+        "studentId": "202-35-652",
+        "fkCampus": "C03",
+        "campusName": "DSC",
+        "studentName": "Md. Mohinuzzaman Tushar",
+        "batchId": "35-32",
+        "batchNo": 32,
+        "programCredit": 0,
+        "programId": "35",
+        "programName": "B.Sc. in Software Engineering",
+        "progShortName": "B.Sc. in SWE",
+        "programType": "BACHELOR",
+        "deptShortName": "SWE",
+        "departmentName": "Software Engineering",
+        "facultyName": "Faculty of Science & Information Technology",
+        "facShortName": "FSIT",
+        "semesterId": "202",
+        "semesterName": "Summer 2020",
+        "shift": "MORNING"
+    },
+    {
         "studentId": "211-35-713",
         "fkCampus": "C03",
         "campusName": "DSC",

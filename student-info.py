@@ -19,6 +19,7 @@ OTHER_STUDENTS = [
     "212-35-3181",
     "212-35-3183",
     "212-35-3182",
+    "202-35-652",
     "202-35-3114"
 ]
 OUTPUT_FILE = "students-info/students-info.json"
